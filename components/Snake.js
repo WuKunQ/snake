@@ -54,7 +54,7 @@ const Snake = () => {
   
   // 移动蛇
   const moveSnake = () => {
-    if (gameOver || isPaused) return;
+    if (isPaused || gameOver) return;
     
     const newSnake = [...snake];
     const head = { ...newSnake[0] };
@@ -83,21 +83,23 @@ const Snake = () => {
       return;
     }
     
-    // 将新头部添加到蛇身
+    // 添加新头部
     newSnake.unshift(head);
     
     // 检查是否吃到食物
     if (head.x === food.x && head.y === food.y) {
-      // 吃到食物，生成新食物，增加分数
-      setFood(generateFood());
+      // 增加分数
       setScore(prevScore => prevScore + 10);
       
-      // 每得100分增加速度
-      if (score > 0 && score % 100 === 0) {
+      // 增加速度（每50分加快一次）
+      if (score > 0 && score % 50 === 0) {
         setSpeed(prevSpeed => Math.max(prevSpeed - 10, 50));
       }
+      
+      // 生成新食物
+      setFood(generateFood());
     } else {
-      // 没吃到食物，移除尾部
+      // 如果没吃到食物，移除尾部
       newSnake.pop();
     }
     
@@ -107,34 +109,31 @@ const Snake = () => {
   // 处理键盘输入
   const handleKeyDown = (e) => {
     // 防止方向键滚动页面
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+    if ([32, 37, 38, 39, 40].includes(e.keyCode)) {
       e.preventDefault();
     }
     
-    // 暂停/继续游戏
-    if (e.key === ' ') {
+    // 空格键暂停/继续游戏
+    if (e.keyCode === 32) {
       setIsPaused(prev => !prev);
       return;
     }
     
-    // 如果游戏结束，按任意键重新开始
-    if (gameOver) {
-      resetGame();
-      return;
-    }
+    // 游戏结束或暂停时不处理方向键
+    if (gameOver || isPaused) return;
     
-    // 更新方向（防止180度转向）
-    switch (e.key) {
-      case 'ArrowUp':
+    // 处理方向键
+    switch (e.keyCode) {
+      case 38: // 上箭头
         if (direction !== 'DOWN') setDirection('UP');
         break;
-      case 'ArrowDown':
+      case 40: // 下箭头
         if (direction !== 'UP') setDirection('DOWN');
         break;
-      case 'ArrowLeft':
+      case 37: // 左箭头
         if (direction !== 'RIGHT') setDirection('LEFT');
         break;
-      case 'ArrowRight':
+      case 39: // 右箭头
         if (direction !== 'LEFT') setDirection('RIGHT');
         break;
       default:
@@ -153,37 +152,34 @@ const Snake = () => {
     setIsPaused(false);
   };
   
-  // 游戏循环
+  // 初始化游戏和键盘事件监听
   useEffect(() => {
+    // 添加键盘事件监听
     window.addEventListener('keydown', handleKeyDown);
     
-    gameLoopRef.current = setInterval(moveSnake, speed);
-    
+    // 清理函数
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       clearInterval(gameLoopRef.current);
     };
-  }, [snake, direction, food, gameOver, speed, isPaused]);
+  }, [direction, gameOver, isPaused]);
   
-  // 当速度改变时更新游戏循环
+  // 游戏循环
   useEffect(() => {
-    clearInterval(gameLoopRef.current);
     gameLoopRef.current = setInterval(moveSnake, speed);
-    
     return () => clearInterval(gameLoopRef.current);
-  }, [speed]);
+  }, [snake, food, direction, gameOver, isPaused, speed]);
   
-  // 渲染游戏
   return (
     <div className={styles.gameContainer}>
       <div className={styles.scoreBoard}>
-        <span>分数: {score}</span>
-        {isPaused && <span className={styles.pausedText}>已暂停</span>}
+        <div>分数: {score}</div>
+        {isPaused && <div className={styles.pausedText}>已暂停</div>}
       </div>
       
       <div 
-        className={styles.gameBoard} 
-        style={{ 
+        className={styles.gameBoard}
+        style={{
           gridTemplateColumns: `repeat(${gridWidth}, ${gridSize}px)`,
           gridTemplateRows: `repeat(${gridHeight}, ${gridSize}px)`,
           width: `${gridWidth * gridSize}px`,
@@ -192,30 +188,30 @@ const Snake = () => {
       >
         {/* 渲染蛇 */}
         {snake.map((segment, index) => (
-          <div 
-            key={`snake-${index}`}
+          <div
+            key={`${segment.x}-${segment.y}`}
             className={`${styles.snakeSegment} ${index === 0 ? styles.snakeHead : ''}`}
-            style={{ 
-              gridColumnStart: segment.x + 1, 
-              gridRowStart: segment.y + 1 
+            style={{
+              gridColumnStart: segment.x + 1,
+              gridRowStart: segment.y + 1
             }}
           />
         ))}
         
         {/* 渲染食物 */}
-        <div 
+        <div
           className={styles.food}
-          style={{ 
-            gridColumnStart: food.x + 1, 
-            gridRowStart: food.y + 1 
+          style={{
+            gridColumnStart: food.x + 1,
+            gridRowStart: food.y + 1
           }}
         />
         
-        {/* 游戏结束提示 */}
+        {/* 游戏结束覆盖层 */}
         {gameOver && (
           <div className={styles.gameOverOverlay}>
             <h2>游戏结束!</h2>
-            <p>你的得分: {score}</p>
+            <p>最终得分: {score}</p>
             <button onClick={resetGame}>再玩一次</button>
           </div>
         )}
@@ -224,7 +220,9 @@ const Snake = () => {
       <div className={styles.controls}>
         <p>使用方向键控制蛇的移动</p>
         <p>空格键暂停/继续游戏</p>
-        {gameOver && <p>按任意键重新开始</p>}
+        {(gameOver || isPaused) && (
+          <button onClick={resetGame}>重新开始</button>
+        )}
       </div>
     </div>
   );
