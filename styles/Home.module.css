@@ -16,13 +16,29 @@
   align-items: center;
 }
 
+.title {
+  margin: 0;
+  line-height: 1.15;
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.description {
+  text-align: center;
+  line-height: 1.5;
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
 .footer {
   width: 100%;
-  height: 100px;
+  height: 50px;
   border-top: 1px solid #eaeaea;
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-top: 2rem;
 }
 
 .footer a {
@@ -33,16 +49,6 @@
   text-decoration: none;
 }
 
-.title {
-  margin: 0;
-  line-height: 1.15;
-  font-size: 4rem;
-  text-align: center;
-}
-
-.description {
-  text-align: center;
-  line-height: 1.5;
-  font-size: 1.5rem;
-  margin: 1rem 0;
+.footer a:hover {
+  text-decoration: underline;
 }
